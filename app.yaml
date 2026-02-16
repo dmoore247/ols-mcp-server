@@ -1,4 +1,4 @@
-command: ["python", "mcp-ols-server"]
+command: ['uv', 'run', 'mcp-ols-server']
 env:
   - name: LOG_LEVEL
     value: DEBUG
