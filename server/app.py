@@ -4,11 +4,17 @@ Sets up the FastMCP server with streamable HTTP transport for Databricks Apps de
 Combines MCP protocol routes with standard FastAPI routes.
 """
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastmcp import FastMCP
 
 from .tools import load_tools
 from .utils import header_store
+
+STATIC_DIR = Path(__file__).parent / "../static"
 
 # Create the MCP server instance
 mcp_server = FastMCP(name="OLS MCP Server")
@@ -30,7 +36,9 @@ app = FastAPI(
 
 @app.get("/", include_in_schema=False)
 async def serve_index():
-    """Health check endpoint."""
+    """Serve the landing page."""
+    if STATIC_DIR.exists() and (STATIC_DIR / "index.html").exists():
+        return FileResponse(STATIC_DIR / "index.html")
     return {"message": "OLS MCP Server is running", "status": "healthy"}
 
 
@@ -43,6 +51,10 @@ combined_app = FastAPI(
     ],
     lifespan=mcp_app.lifespan,
 )
+
+
+if STATIC_DIR.exists():
+    combined_app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @combined_app.middleware("http")
