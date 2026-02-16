@@ -5,7 +5,7 @@
       "args": [
         "tool",
         "run",
-        "ols-mcp-server"
+        "mcp-ols-server"
       ],
       "env": {}
     }

@@ -1,12 +1,17 @@
 [project]
-name = "ols-mcp-server"
+name = "mcp-ols-server"
 version = "0.1.0"
 description = "MCP server for Ontology Lookup Service (OLS) API"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastmcp>=2.10.5",
+    "fastapi>=0.115.12",
+    "fastmcp>=2.12.5",
     "httpx>=0.24.0",
+    "mcp[cli]>=1.14.0",
+    "uvicorn>=0.34.2",
+    "databricks-sdk>=0.60.0",
+    "pydantic>=2",
 ]
 
 [build-system]
@@ -14,5 +19,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-ols-mcp-server = "ols_mcp_server.server:main"
+mcp-ols-server = "server.main:main"
 
+[tool.hatch.build.targets.wheel]
+packages = ["server"]

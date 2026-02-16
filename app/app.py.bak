@@ -1,0 +1,277 @@
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, Dict, Any, List
+import httpx
+import logging
+from contextlib import asynccontextmanager
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+OLS_API_BASE_URL = "https://www.ebi.ac.uk/ols4/api"
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting OLS MCP FastAPI Service")
+    yield
+    logger.info("Shutting down OLS MCP FastAPI Service")
+
+app = FastAPI(
+    title="OLS MCP Service",
+    description="Databricks Apps-based MCP service for Ontology Lookup Service (OLS) API",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class SearchRequest(BaseModel):
+    query: str
+    ontology: Optional[str] = None
+    type: Optional[str] = None
+    rows: Optional[int] = 10
+
+class TermRequest(BaseModel):
+    ontology: str
+    term_id: str
+
+class OntologyRequest(BaseModel):
+    ontology_id: str
+
+@app.get("/")
+async def root():
+    return {
+        "service": "OLS MCP Service",
+        "status": "healthy",
+        "version": "1.0.0",
+        "description": "Databricks Apps-based MCP service for Ontology Lookup Service"
+    }
+
+@app.get("/health")
+async def health_check():
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{OLS_API_BASE_URL}/ontologies", timeout=5.0)
+            ols_status = "healthy" if response.status_code == 200 else "degraded"
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        ols_status = "unhealthy"
+    
+    return {
+        "status": "healthy",
+        "ols_api_status": ols_status
+    }
+
+@app.post("/mcp/search")
+async def search_ontologies(request: SearchRequest):
+    try:
+        params = {
+            "q": request.query,
+            "rows": request.rows
+        }
+        
+        if request.ontology:
+            params["ontology"] = request.ontology
+        if request.type:
+            params["type"] = request.type
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{OLS_API_BASE_URL}/search",
+                params=params,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            
+        return response.json()
+    
+    except httpx.HTTPError as e:
+        logger.error(f"Search failed: {e}")
+        raise HTTPException(status_code=500, detail=f"OLS API error: {str(e)}")
+
+@app.get("/mcp/ontologies")
+async def list_ontologies():
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{OLS_API_BASE_URL}/ontologies",
+                timeout=30.0
+            )
+            response.raise_for_status()
+            
+        return response.json()
+    
+    except httpx.HTTPError as e:
+        logger.error(f"List ontologies failed: {e}")
+        raise HTTPException(status_code=500, detail=f"OLS API error: {str(e)}")
+
+@app.post("/mcp/ontology")
+async def get_ontology(request: OntologyRequest):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{OLS_API_BASE_URL}/ontologies/{request.ontology_id}",
+                timeout=30.0
+            )
+            response.raise_for_status()
+            
+        return response.json()
+    
+    except httpx.HTTPError as e:
+        logger.error(f"Get ontology failed: {e}")
+        raise HTTPException(status_code=500, detail=f"OLS API error: {str(e)}")
+
+@app.post("/mcp/term")
+async def get_term(request: TermRequest):
+    try:
+        async with httpx.AsyncClient() as client:
+            import urllib.parse
+            encoded_term = urllib.parse.quote(request.term_id, safe='')
+            
+            response = await client.get(
+                f"{OLS_API_BASE_URL}/ontologies/{request.ontology}/terms/{encoded_term}",
+                timeout=30.0
+            )
+            response.raise_for_status()
+            
+        return response.json()
+    
+    except httpx.HTTPError as e:
+        logger.error(f"Get term failed: {e}")
+        raise HTTPException(status_code=500, detail=f"OLS API error: {str(e)}")
+
+@app.get("/mcp/ontologies/{ontology_id}/terms")
+async def get_ontology_terms(
+    ontology_id: str,
+    page: int = 0,
+    size: int = 20
+):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{OLS_API_BASE_URL}/ontologies/{ontology_id}/terms",
+                params={"page": page, "size": size},
+                timeout=30.0
+            )
+            response.raise_for_status()
+            
+        return response.json()
+    
+    except httpx.HTTPError as e:
+        logger.error(f"Get ontology terms failed: {e}")
+        raise HTTPException(status_code=500, detail=f"OLS API error: {str(e)}")
+
+@app.post("/mcp/initialize")
+async def mcp_initialize(request: Request):
+    body = await request.json()
+    return {
+        "protocolVersion": "2024-11-05",
+        "capabilities": {
+            "tools": {
+                "listChanged": False
+            }
+        },
+        "serverInfo": {
+            "name": "ols-mcp-server",
+            "version": "1.0.0"
+        }
+    }
+
+@app.post("/mcp/tools/list")
+async def mcp_list_tools():
+    return {
+        "tools": [
+            {
+                "name": "search_ontologies",
+                "description": "Search across ontologies using OLS API",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "Search term"},
+                        "ontology": {"type": "string", "description": "Optional specific ontology"},
+                        "type": {"type": "string", "description": "Optional type filter"},
+                        "rows": {"type": "integer", "description": "Number of results", "default": 10}
+                    },
+                    "required": ["query"]
+                }
+            },
+            {
+                "name": "list_ontologies",
+                "description": "List all available ontologies",
+                "inputSchema": {"type": "object", "properties": {}}
+            },
+            {
+                "name": "get_ontology",
+                "description": "Get details about a specific ontology",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "ontology_id": {"type": "string", "description": "Ontology identifier"}
+                    },
+                    "required": ["ontology_id"]
+                }
+            },
+            {
+                "name": "get_term",
+                "description": "Get details about a specific term",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "ontology": {"type": "string", "description": "Ontology identifier"},
+                        "term_id": {"type": "string", "description": "Term IRI or ID"}
+                    },
+                    "required": ["ontology", "term_id"]
+                }
+            }
+        ]
+    }
+
+@app.post("/mcp/tools/call")
+async def mcp_call_tool(request: Request):
+    body = await request.json()
+    tool_name = body.get("name")
+    arguments = body.get("arguments", {})
+    
+    try:
+        if tool_name == "search_ontologies":
+            result = await search_ontologies(SearchRequest(**arguments))
+        elif tool_name == "list_ontologies":
+            result = await list_ontologies()
+        elif tool_name == "get_ontology":
+            result = await get_ontology(OntologyRequest(**arguments))
+        elif tool_name == "get_term":
+            result = await get_term(TermRequest(**arguments))
+        else:
+            raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
+        
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": str(result)
+                }
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Tool execution failed: {e}")
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"Error: {str(e)}"
+                }
+            ],
+            "isError": True
+        }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
