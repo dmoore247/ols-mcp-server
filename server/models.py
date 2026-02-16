@@ -12,16 +12,16 @@ class OntologyInfo(BaseModel):
     number_of_terms: Optional[int] = Field(None, description="Number of terms in the ontology")
     number_of_classes: Optional[int] = Field(None, description="Number of classes in the ontology", alias="numberOfClasses")
     repository: Optional[HttpUrl] = Field(None, description="Repository URL for the ontology")
-    
+
 class PagedResponse(BaseModel):
     total_elements: int = Field(0, description="Total number of items", alias="totalElements")
     page: int = Field(0, description="Current page number")
     size: int = Field(20, description="Starting index of the current page", alias="numElements")
     total_pages: int = Field(0, description="Total number of pages", alias="totalPages")
-    
+
 class OntologySearchResponse(PagedResponse):
     ontologies: list[OntologyInfo] = Field(..., description="List of ontologies matching the search criteria")
-    
+
 
 class TermInfo(BaseModel):
     iri: HttpUrl = Field(..., description="IRI of the term")
@@ -34,7 +34,7 @@ class TermInfo(BaseModel):
 class TermSearchResponse(PagedResponse):
     num_found: int = Field(0, description="Total number of terms found", alias="numFound")
     terms: list[TermInfo] = Field(..., description="List of terms matching the search criteria")
-    
+
 class DetailedTermInfo(TermInfo):
     description: Optional[list[str]] = Field(None, description="Definition of the term")
     synonyms: Optional[list[str]] = Field(None, description="List of synonyms for the term")

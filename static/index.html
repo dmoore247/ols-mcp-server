@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OLS MCP Server on Databricks Apps</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            hljs.highlightAll();
+
+            const fullHost = `https://${window.location.hostname}/mcp`;
+            document.querySelectorAll('.app-host').forEach(el => {
+                el.textContent = fullHost;
+            });
+
+            const pyCode = document.querySelector('pre code.language-python');
+            if (pyCode) {
+                pyCode.innerHTML = pyCode.innerHTML.replace('databricks-app-url', fullHost);
+            }
+        });
+    </script>
+</head>
+
+<body class="bg-gray-900 text-gray-100 font-sans">
+
+    <!-- Hero Section -->
+    <div class="py-12 sm:py-16 h-screen flex items-center justify-center">
+        <div class="max-w-3xl mx-auto px-4 text-center">
+            <!-- Logos -->
+            <div class="flex justify-center items-center gap-8 mb-8">
+                <div class="w-24 h-24 rounded-full flex items-center justify-center">
+                    <img src="https://cdn.bfldr.com/9AYANS2F/at/k8bgnnxhb4bggjk88r4x9snf/databricks-symbol-color.svg?auto=webp&format=png"
+                        alt="Databricks Logo" class="w-20 h-20">
+                </div>
+                <div class="w-24 h-24 rounded-full flex items-center justify-center">
+                    <img src="/static/BioOntologyLogo.png" alt="BioOntology Lookup Service"
+                        class="w-20 h-20 rounded-full">
+                </div>
+            </div>
+            <h1 class="text-4xl font-bold text-white sm:text-5xl text-balance">
+                OLS MCP Server on Databricks Apps
+            </h1>
+            <p class="mt-6 text-xl text-gray-300">
+                A Model Context Protocol server for the Ontology Lookup Service (OLS) API,
+                giving AI assistants access to biomedical ontologies.
+            </p>
+            <div class="mt-10">
+                <a href="#tools"
+                    class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    View Tools
+                </a>
+                <a href="#connect"
+                    class="ml-4 inline-flex items-center px-6 py-3 border border-gray-600 text-base font-medium rounded-md text-gray-300 hover:bg-gray-800">
+                    Connect
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools Section -->
+    <div id="tools" class="py-12 bg-gray-800">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl font-bold text-center text-white mb-10">Available Tools</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-2">search_terms</h3>
+                    <p class="text-sm text-gray-400">Search for terms across ontologies using the OLS search API. Supports exact matching, obsolete filtering, and ontology restriction.</p>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-2">get_ontology_info</h3>
+                    <p class="text-sm text-gray-400">Get detailed information about a specific ontology by its identifier (e.g., 'efo', 'go', 'mondo').</p>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-2">search_ontologies</h3>
+                    <p class="text-sm text-gray-400">Search for available ontologies with optional text filtering and pagination.</p>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-2">get_term_info</h3>
+                    <p class="text-sm text-gray-400">Get detailed information about a specific term by IRI, short form, or OBO ID.</p>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-2">get_term_children</h3>
+                    <p class="text-sm text-gray-400">Get direct children of a specific term within an ontology hierarchy.</p>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-2">get_term_ancestors</h3>
+                    <p class="text-sm text-gray-400">Get ancestor terms (parents) of a specific term in the ontology graph.</p>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg p-6 border border-gray-700 md:col-start-2 lg:col-start-auto">
+                    <h3 class="text-lg font-semibold text-white mb-2">find_similar_terms</h3>
+                    <p class="text-sm text-gray-400">Find terms similar to a given term using LLM embeddings for semantic similarity.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Section -->
+    <div id="connect" class="py-12">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl font-bold text-center text-white">Connect to the Server</h2>
+            <div class="mt-10 bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-white">Connection Details</h3>
+                </div>
+                <div class="border-t border-gray-700 px-4 py-5 sm:p-6">
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-8">
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-400">Server URL</dt>
+                            <dd class="mt-1 text-sm text-gray-100">
+                                <code class="bg-gray-900 px-2 py-1 rounded app-host">https://your.app.url.databricksapps.com/mcp</code>
+                            </dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-sm font-medium text-gray-400">Transport</dt>
+                            <dd class="mt-1 text-sm text-gray-100">
+                                <code class="bg-gray-900 px-2 py-1 rounded">Streamable HTTP</code>
+                            </dd>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <dt class="text-sm font-medium text-gray-400">Example Connection (Python)</dt>
+                            <dd class="mt-1 text-sm text-gray-100">
+                                <pre class="bg-gray-900 p-3 rounded overflow-x-auto">
+<code class="language-python">
+from databricks.sdk import WorkspaceClient
+from databricks_mcp import DatabricksMCPClient
+
+# Initialize the Databricks Workspace client
+ws_client = WorkspaceClient(
+    host="databricks-host",
+    token="exactly-scoped-OAuth-token",
+)
+
+# Initialize the MCP client with your app's MCP endpoint
+mcp_client = DatabricksMCPClient(
+    server_url='databricks-app-url',
+    workspace_client=ws_client,
+)
+
+# List available MCP tools
+print(mcp_client.list_tools())
+</code>
+                                </pre>
+                            </dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-sm font-medium text-gray-400">Or use your favourite tool</dt>
+                            <dd class="mt-1 text-sm text-gray-100">
+                                You can also connect using tools like <strong>Claude</strong>, <strong>MCP
+                                    Inspector</strong>, or any other compatible client.
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documentation Footer -->
+    <div class="py-12 bg-gray-800">
+        <div class="max-w-3xl mx-auto px-4 text-center">
+            <h2 class="text-2xl font-bold text-white mb-4">Documentation</h2>
+            <p class="text-lg text-gray-300 mb-6">
+                Learn more about MCP on Databricks Apps and the Ontology Lookup Service.
+            </p>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <a href="https://docs.databricks.com/aws/en/generative-ai/mcp/custom-mcp" target="_blank"
+                    rel="noopener"
+                    class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Custom MCP on Databricks
+                </a>
+                <a href="https://www.ebi.ac.uk/ols4" target="_blank" rel="noopener"
+                    class="inline-flex items-center px-6 py-3 border border-gray-600 text-base font-medium rounded-md text-gray-300 hover:bg-gray-700">
+                    OLS4 API
+                </a>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

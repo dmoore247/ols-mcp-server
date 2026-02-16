@@ -1,0 +1,4 @@
+command: ["python", "mcp-ols-server"]
+env:
+  - name: LOG_LEVEL
+    value: DEBUG
